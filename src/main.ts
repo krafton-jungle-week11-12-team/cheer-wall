@@ -7,6 +7,6 @@ function byId(id: string): HTMLElement {
   return found;
 }
 
-const app = byId('app');
+const app = byId('root');
 
 new FunctionComponent(App, {}, app).mount();

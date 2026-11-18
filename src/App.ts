@@ -5,5 +5,6 @@ export function App() {
   return h(
     'div',
     {class: 'container'},
+    '응원 메시지 벽'
   );
 }
