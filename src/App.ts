@@ -3,7 +3,7 @@ import { WallMessage } from './api/messages';
 import { useEffect, useState } from './lib/mini-react';
 import { MessagesPage, toMessages,type Tab } from './pages/MessagesPage';
 import { WallPage } from './pages/WallPage';
-import { fetchWall, likeMessage, fetchMessages, type MessageRow } from './api/messages';
+import { fetchWall, likeMessage, fetchMyMessages, type MessageRow } from './api/messages';
 
 export function App() {
   const [route, setRoute] = useState(location.hash);
@@ -33,7 +33,7 @@ export function App() {
   // 전체 메시지화면을 열때 DB 전체 목록과 벽 목록 가져오기
   useEffect(() => {
     if (route === '#donghwan') return; // 벽 화면일 때는 DBMS 메시지 목록 안 가져오기
-    fetchMessages().then(setAllRows).catch(console.error);
+    fetchMyMessages().then(setAllRows).catch(console.error);
     loadWall();
   }, [route]);
 

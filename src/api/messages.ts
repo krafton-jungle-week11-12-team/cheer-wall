@@ -1,4 +1,7 @@
 import { redis } from "./redis";
+import { getClientId } from '../utils/author';
+
+const esc = (s: string) => `'${s.replace(/'/g, "''")}'`;
 
 export type WallMessage = {
   id: number;
@@ -39,8 +42,9 @@ export async function sendMessage(author: string, content: string) {
 
 export async function insertMessage(author: string, content: string, createdAt: number): Promise<InsertResult> {
   const esc = (s: string) => `'${s.replace(/'/g, "''")}'`;
-  const query = `INSERT INTO messages VALUES (${esc(author)}, ${esc(content)}, ${createdAt})`;
+  const query = `INSERT INTO messages VALUES (${esc(author)}, ${esc(content)}, ${createdAt}, ${esc(getClientId())})`;
 
+  
   const res = await fetch('/db/query', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -53,11 +57,11 @@ export async function insertMessage(author: string, content: string, createdAt: 
 }
 
 // DBMS message 테이블 전부 읽어서 메시지 목록으로 돌려주는 함수
-export async function fetchMessages(): Promise<MessageRow[]> {
+export async function fetchMyMessages(): Promise<MessageRow[]> {
   const res = await fetch('/db/query', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sql: 'SELECT * FROM messages' }),
+    body: JSON.stringify({ sql: `SELECT id, author, content, created_at FROM messages WHERE client_id = ${esc(getClientId())}`}),
   });
 
   const result = await res.json();
