@@ -1,6 +1,7 @@
-import { h, type VNode } from "../lib/mini-react";
+import { h } from "../lib/mini-react";
 import { sendMessage, type WallMessage } from "../api/messages";
-import { formatRemaining, isExpired } from "../utils/time";
+import { isExpired } from "../utils/time";
+import { MessageCard } from "../components/MessageCard";
 
 type WallMessageProps = {
   messages: WallMessage[];
@@ -33,22 +34,12 @@ export function WallPage({ messages, now, onSent, onLike }: WallMessageProps) {
   return h('section', {},
     h('h2', {}, '동환 페이지'),
     h('ul', { class: 'wall-list' },
-      alive.map((m) => h(WallCard, { key: m.id, message: m, now, onLike })),
+      alive.map((m) => h(MessageCard, { key: m.id, message: m, now, onLike })),
     ),
     h('form', { onSubmit },
       h('input', { name: 'author', placeholder: '작성자를 입력하세요'}),
       h('input', { name: 'content', placeholder: '응원 메시지를 입력하세요'}),
       h('button', { type: "submit" }, '전송'),
     )
-  );
-}
-
-// 벽에 붙는 메시지 카드 하나: 작성자, 남은 시간, 내용, 좋아요 버튼
-function WallCard({ message, now, onLike }: { message: WallMessage; now: number; onLike: (id: number) => void; }): VNode {
-  return h('li', { class: 'card' },
-    h('strong', {}, message.author),
-    h('span', { class: 'timer' }, formatRemaining(message.expiresAt - now)),
-    h('p', {}, message.content),
-    h('button', { type: 'button', class: 'like', onClick: () => onLike(message.id) }, `❤ ${message.likes}`),
   );
 }

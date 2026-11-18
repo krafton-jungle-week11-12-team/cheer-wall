@@ -2,7 +2,7 @@ import { h, useEffect, useState } from './lib/mini-react';
 import { MessagesPage, toMessages, type Tab } from './pages/MessagesPage';
 import { WallPage } from './pages/WallPage';
 import { fetchWall, likeMessage, fetchMyMessages, fetchLikeCounts, type MessageRow, type WallMessage } from './api/messages';
-import { WALL_ROUTE } from './config';
+import { WALL_ROUTE, MESSAGES_ROUTE } from './config';
 
 export function App() {
   const [route, setRoute] = useState(location.hash);
@@ -68,7 +68,7 @@ export function App() {
 
   return h('div', { class: 'container' },
   h('ul', {},
-    h('li', {}, h('a', { href: '#dongho' }, '동호')),
+    h('li', {}, h('a', { href: MESSAGES_ROUTE }, '동호')),
     h('li', {}, h('a', { href: WALL_ROUTE }, '동환')),
   ),
   page,

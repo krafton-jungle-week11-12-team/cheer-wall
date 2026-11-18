@@ -1,5 +1,6 @@
-// 벽(실시간 메시지) 화면의 hash 라우트
-export const WALL_ROUTE = '#donghwan';
+// hash 라우트: 벽(실시간 메시지) 화면, 내가 쓴 전체 메시지 화면
+export const WALL_ROUTE = '#wall';
+export const MESSAGES_ROUTE = '#messages';
 
 // Redis에 저장한 메시지·좋아요 카운터의 만료 시간(초)
 export const TTL_SECONDS = '1800';

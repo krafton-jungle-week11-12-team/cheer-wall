@@ -1,6 +1,7 @@
 import { h, type VNode } from '../lib/mini-react';
 import type { Message, MessageRow, WallMessage } from '../api/messages';
-import { formatRemaining, isExpired } from '../utils/time';
+import { isExpired } from '../utils/time';
+import { MessageCard } from '../components/MessageCard';
 
 export type Tab = 'all' | 'expired';
 
@@ -12,7 +13,7 @@ export function MessagesPage({ messages, now, tab, onTabChange }: { messages: Me
   return h('section', {},
     h('h2', {}, '동호 페이지'),
     h(TabButton, { tab, onChange: onTabChange, totalCount: sorted.length, expiredCount: expired.length }),
-    h('ul', {}, visible.map((m) => h(MessageItem, { key: m.id, message: m, now }))),);
+    h('ul', {}, visible.map((m) => h(MessageCard, { key: m.id, message: m, now, showId: true }))),);
 }
 
 // DBMS와 Redis에서 가져온 메시지 데이터를 화면에 보여주기 위해 변환하는 함수
@@ -27,19 +28,6 @@ export function toMessages(rows: MessageRow[], wall: WallMessage[], likeCounts: 
       likes: likeCounts[row.id] ?? 0
     };
   });
-}
-
-// 메시지 출력 컴포넌트 id, 이름, 내용, 남은 시간(만료됨 또는 분:초) 순 출력
-function MessageItem({ message, now }: { message: Message; now: number; }): VNode {
-  return h('li', null,
-    `#${message.id} `,
-    h('b', null, message.author),
-    `: ${message.content}`,
-    message.expiresAt === null || isExpired(message.expiresAt, now)
-      ? '[만료됨]'
-      : `[${formatRemaining(message.expiresAt - now)} 남음]`,
-    `❤ ${message.likes}`,
-  );
 }
 
 function TabButton({ tab, onChange, totalCount, expiredCount }:
