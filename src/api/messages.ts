@@ -44,7 +44,7 @@ export async function insertMessage(author: string, content: string, createdAt: 
   const esc = (s: string) => `'${s.replace(/'/g, "''")}'`;
   const query = `INSERT INTO messages VALUES (${esc(author)}, ${esc(content)}, ${createdAt}, ${esc(getClientId())})`;
 
-  
+
   const res = await fetch('/db/query', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -73,6 +73,23 @@ export async function fetchMyMessages(): Promise<MessageRow[]> {
     createdAt: row[3]
   }));
 }
+// DBMS likes 테이블 전부 읽어서 messageId별 좋아요 개수로 돌려주는 함수
+export async function fetchLikeCounts():Promise<Record<number, number>> {
+  const res = await fetch('/db/query', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sql: `SELECT message_id FROM likes` }),
+  });
+  const result = await res.json();
+  if (!result.ok) throw new Error(result.error.message);
+  const counts: Record<number, number> = {};
+  //row 하나가 좋아요 하나를 의미하므로, messageId를 key로 해서 카운트 세기
+  for (const row of result.rows) {
+    const messageId = row[0]
+    counts[messageId] = (counts[messageId] ?? 0) + 1;
+  }
+  return counts;
+}
 
 type ScanItem = { key: string; value: string; ttl: number };
 
@@ -86,7 +103,7 @@ export async function fetchWall(): Promise<WallMessage[]> {
   for (const item of likeItems) {
     likesById.set(Number(item.key.slice('likes:'.length)), Number(item.value));
   }
-  
+
   const now = Date.now();
 
   const messages: WallMessage[] = [];
