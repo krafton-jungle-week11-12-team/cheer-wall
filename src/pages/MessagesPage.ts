@@ -1,12 +1,13 @@
 import { h, type VNode } from '../lib/mini-react';
 
 // 페이지 전체, 만료됨 탭 바꿔서 보여주기 탭 상태는 app에서 props로 받음
-export function MessagesPage({ tab, onTabChange }: { tab: Tab; onTabChange: (next: Tab) => void }) :VNode {
-  const expiredCount = SAMPLE.filter(isExpired).length;
-  const visible = tab === 'expired' ? SAMPLE.filter(isExpired) : SAMPLE;
+export function MessagesPage({ tab, onTabChange }: { tab: Tab; onTabChange: (next: Tab) => void; }): VNode {
+  const sorted = [...SAMPLE].sort((a, b) => b.id - a.id); // id 내림차순 정렬
+  const expiredCount = sorted.filter(isExpired).length;
+  const visible = tab === 'expired' ? sorted.filter(isExpired) : sorted;
   return h('section', {},
     h('h2', {}, '동호 페이지'),
-    h(TabButton, { tab, onChange: onTabChange, totalCount: SAMPLE.length, expiredCount }),
+    h(TabButton, { tab, onChange: onTabChange, totalCount: sorted.length, expiredCount }),
     h('ul', {}, visible.map((m) => h(MessageItem, { key: m.id, message: m }))),);
 }
 
@@ -23,7 +24,7 @@ const SAMPLE: Message[] = [
   { id: 1, author: '동호', content: '정글 끝나는 날 언제임', expiresAt: Date.now() + 10 * 60 * 1000 }, // 10분 남음
   { id: 2, author: 'Bob', content: '모두 화이팅입니다', expiresAt: Date.now() + 25 * 60 * 1000 },     // 25분 남음
   { id: 3, author: 'Charlie', content: 'React is great!', expiresAt: null },                          // 만료됨
-  { id: 4, author: '이현지A', content: '화이팅 하세요!!!^^ Are you redis~!!', expiresAt: Date.now() + 30 * 60 * 1000 },                          // 만료됨
+  { id: 4, author: '이현지A', content: '화이팅 하세요!!!^^ Are you redis~!!', expiresAt: Date.now() + 30 * 60 * 1000 },  // 30분 남음
 
 ];
 
@@ -45,7 +46,7 @@ function TabButton({ tab, onChange, totalCount, expiredCount }:
     tab: Tab;
     onChange: (next: Tab) => void;
     totalCount: number;
-    expiredCount: number
+    expiredCount: number;
   }): VNode {
   return h('div', null,
     h('button', { type: 'button', disabled: tab === 'all', onClick: () => onChange('all') }, `전체 (${formatCount(totalCount)})`),
