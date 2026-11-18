@@ -1,7 +1,7 @@
 import { redis } from "./redis";
+import { db, esc } from "./db";
 import { getClientId } from '../utils/author';
-
-const esc = (s: string) => `'${s.replace(/'/g, "''")}'`;
+import { TTL_SECONDS, MSG_KEY_PREFIX, LIKES_KEY_PREFIX } from '../config';
 
 export type WallMessage = {
   id: number;
@@ -10,6 +10,9 @@ export type WallMessage = {
   expiresAt: number;   // ms
   likes: number;
 };
+
+// 전체 메시지 화면용. Redis에서 만료돼 사라진 메시지는 expiresAt이 null
+export type Message = Omit<WallMessage, 'expiresAt'> & { expiresAt: number | null };
 
 export type InsertResult = {
   ok: true;
@@ -26,7 +29,8 @@ export type MessageRow = {
   createdAt: number;
 }
 
-const TTL_SECONDS = '1800';
+const msgKey = (id: number) => `${MSG_KEY_PREFIX}${id}`;
+const likesKey = (id: number) => `${LIKES_KEY_PREFIX}${id}`;
 
 export async function sendMessage(author: string, content: string) {
   const createdAt = Date.now();
@@ -34,39 +38,24 @@ export async function sendMessage(author: string, content: string) {
   const id = dbResult.inserted_id;
 
   const value = JSON.stringify({ id, author, content, createdAt });
-  await redis('SET', `msg:${id}`, value, TTL_SECONDS);
-  await redis('SET', `likes:${id}`, '0', TTL_SECONDS);
+  await redis('SET', msgKey(id), value, TTL_SECONDS);
+  await redis('SET', likesKey(id), '0', TTL_SECONDS);
 
   return dbResult
 }
 
 export async function insertMessage(author: string, content: string, createdAt: number): Promise<InsertResult> {
-  const esc = (s: string) => `'${s.replace(/'/g, "''")}'`;
-  const query = `INSERT INTO messages VALUES (${esc(author)}, ${esc(content)}, ${createdAt}, ${esc(getClientId())})`;
-
-
-  const res = await fetch('/db/query', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sql: query }),
-  });
-
-  const result = await res.json();
-  if (!result.ok) throw new Error(result.error.message);
-  return result;
+  return db<InsertResult>(
+    `INSERT INTO messages VALUES (${esc(author)}, ${esc(content)}, ${createdAt}, ${esc(getClientId())})`,
+  );
 }
 
 // DBMS message 테이블 전부 읽어서 메시지 목록으로 돌려주는 함수
 export async function fetchMyMessages(): Promise<MessageRow[]> {
-  const res = await fetch('/db/query', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sql: `SELECT id, author, content, created_at FROM messages WHERE client_id = ${esc(getClientId())}`}),
-  });
-
-  const result = await res.json();
-  if (!result.ok) throw new Error(result.error.message);
-  return result.rows.map((row: [number, string, string, number]) => ({
+  const result = await db<{ rows: [number, string, string, number][] }>(
+    `SELECT id, author, content, created_at FROM messages WHERE client_id = ${esc(getClientId())}`,
+  );
+  return result.rows.map((row) => ({
     id: row[0],
     author: row[1],
     content: row[2],
@@ -75,13 +64,7 @@ export async function fetchMyMessages(): Promise<MessageRow[]> {
 }
 // DBMS likes 테이블 전부 읽어서 messageId별 좋아요 개수로 돌려주는 함수
 export async function fetchLikeCounts():Promise<Record<number, number>> {
-  const res = await fetch('/db/query', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sql: `SELECT message_id FROM likes` }),
-  });
-  const result = await res.json();
-  if (!result.ok) throw new Error(result.error.message);
+  const result = await db<{ rows: [number][] }>(`SELECT message_id FROM likes`);
   const counts: Record<number, number> = {};
   //row 하나가 좋아요 하나를 의미하므로, messageId를 key로 해서 카운트 세기
   for (const row of result.rows) {
@@ -95,13 +78,13 @@ type ScanItem = { key: string; value: string; ttl: number };
 
 export async function fetchWall(): Promise<WallMessage[]> {
   const [items, likeItems] = await Promise.all([
-    redis<ScanItem[]>('SCANPREFIX', 'msg:'),
-    redis<ScanItem[]>('SCANPREFIX', 'likes:')
+    redis<ScanItem[]>('SCANPREFIX', MSG_KEY_PREFIX),
+    redis<ScanItem[]>('SCANPREFIX', LIKES_KEY_PREFIX)
   ])
 
   const likesById = new Map<number, number>();
   for (const item of likeItems) {
-    likesById.set(Number(item.key.slice('likes:'.length)), Number(item.value));
+    likesById.set(Number(item.key.slice(LIKES_KEY_PREFIX.length)), Number(item.value));
   }
 
   const now = Date.now();
@@ -120,15 +103,8 @@ export async function fetchWall(): Promise<WallMessage[]> {
 
 export async function likeMessage(id: number): Promise<number> {
   // 1. 영구 기록 먼저 (메시지 저장과 같은 순서)
-  const res = await fetch('/db/query', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sql: `INSERT INTO likes VALUES (${id}, ${Date.now()})` }),
-  });
-
-  const result = await res.json();
-  if (!result.ok) throw new Error(result.error.message);
+  await db(`INSERT INTO likes VALUES (${id}, ${Date.now()})`);
 
   // 2. 실시간 카운터
-  return redis<number>('INCR', `likes:${id}`);
+  return redis<number>('INCR', likesKey(id));
 }
