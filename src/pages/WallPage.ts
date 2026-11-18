@@ -31,15 +31,15 @@ export function WallPage({ messages, now, onSent, onLike }: WallMessageProps) {
 
   const alive = messages.filter((m) => !isExpired(m.expiresAt, now));   // 0초 된 카드는 다음 polling 전에 숨김
 
-  return h('section', {},
-    h('h2', {}, '동환 페이지'),
-    h('ul', { class: 'wall-list' },
+  return h('section', { class: 'page wall-page' },
+    h('h2', { class: 'page-title' }, '동환 페이지'),
+    h('ul', { class: 'wall-list card-list' },
       alive.map((m) => h(MessageCard, { key: m.id, message: m, now, onLike })),
     ),
-    h('form', { onSubmit },
-      h('input', { name: 'author', placeholder: '작성자를 입력하세요'}),
+    h('form', { class: 'composer', onSubmit },
+      h('input', { name: 'author', placeholder: '닉네임'}),
       h('input', { name: 'content', placeholder: '응원 메시지를 입력하세요'}),
-      h('button', { type: "submit" }, '전송'),
+      h('button', { type: "submit", 'aria-label': '전송' }, '(ง •̀_•́)ง'),
     )
   );
 }

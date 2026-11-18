@@ -1,3 +1,6 @@
+import "../styles/base.css";
+import "../styles/wall.css";
+import "../styles/my-messages.css";
 import { App } from "./App";
 import { FunctionComponent } from "./lib/mini-react";
 
