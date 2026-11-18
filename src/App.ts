@@ -1,9 +1,8 @@
-import { h } from '../src/lib/mini-react/h';
-import { WallMessage } from './api/messages';
-import { useEffect, useState } from './lib/mini-react';
-import { MessagesPage, toMessages,type Tab } from './pages/MessagesPage';
+import { h, useEffect, useState } from './lib/mini-react';
+import { MessagesPage, toMessages, type Tab } from './pages/MessagesPage';
 import { WallPage } from './pages/WallPage';
-import { fetchWall, likeMessage, fetchMyMessages, fetchLikeCounts, type MessageRow } from './api/messages';
+import { fetchWall, likeMessage, fetchMyMessages, fetchLikeCounts, type MessageRow, type WallMessage } from './api/messages';
+import { WALL_ROUTE, MESSAGES_ROUTE } from './config';
 
 export function App() {
   const [route, setRoute] = useState(location.hash);
@@ -25,7 +24,7 @@ export function App() {
 
   // 벽 화면일 때만 3초마다 다시 가져오기
   useEffect(() => {
-    if (route !== '#donghwan') return;
+    if (route !== WALL_ROUTE) return;
     loadWall();
     const t = setInterval(loadWall, 3000);
     return () => clearInterval(t);
@@ -33,7 +32,7 @@ export function App() {
 
   // 전체 메시지화면을 열때 DB 전체 목록과 벽 목록 가져오기
   useEffect(() => {
-    if (route === '#donghwan') return; // 벽 화면일 때는 DBMS 메시지 목록 안 가져오기
+    if (route === WALL_ROUTE) return; // 벽 화면일 때는 DBMS 메시지 목록 안 가져오기
     fetchMyMessages().then(setAllRows).catch(console.error);
     fetchLikeCounts().then(setLikeCounts).catch(console.error);
     loadWall();
@@ -45,15 +44,17 @@ export function App() {
     return () => clearInterval(t);
   }, []);
 
+  // id가 같은 메시지의 좋아요 수만 바꿈
+  const setLikes = (id: number, next: (likes: number) => number) =>
+    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, likes: next(m.likes) } : m)));
+
   const onLike = (id: number) => {
     // 낙관적 업데이트
-    setMessages((prev) => prev.map((m) => (m.id === id ? {...m, likes: m.likes + 1} : m)));
+    setLikes(id, (likes) => likes + 1);
 
     likeMessage(id)
-    .then((count) =>
-      // 서버가 준 실제 값으로 맞춤 (다른 사람이 동시에 누른 것까지 반영)
-      setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, likes: count } : m))),
-    )
+    // 서버가 준 실제 값으로 맞춤 (다른 사람이 동시에 누른 것까지 반영)
+    .then((count) => setLikes(id, () => count))
     .catch((e) => {
       console.error(e);
       loadWall();   // 실패하면 서버 값으로 되돌림
@@ -61,14 +62,14 @@ export function App() {
 
   }
 
-  const page = route === '#donghwan'
+  const page = route === WALL_ROUTE
     ? h(WallPage, { messages, now, onSent: loadWall, onLike })
-    : h(MessagesPage, { messages: toMessages(allRows, messages, likeCounts), tab, onTabChange: setTab });// 전체 메시지 탭(전체/만료된 메시지)
+    : h(MessagesPage, { messages: toMessages(allRows, messages, likeCounts), now, tab, onTabChange: setTab });// 전체 메시지 탭(전체/만료된 메시지)
 
   return h('div', { class: 'container' },
   h('ul', {},
-    h('li', {}, h('a', { href: '#dongho' }, '동호')),
-    h('li', {}, h('a', { href: '#donghwan' }, '동환')),
+    h('li', {}, h('a', { href: MESSAGES_ROUTE }, '동호')),
+    h('li', {}, h('a', { href: WALL_ROUTE }, '동환')),
   ),
   page,
 );
