@@ -1,5 +1,5 @@
 import { h } from "../lib/mini-react";
-import { insertMessage } from "../api/messages";
+import { sendMessage } from "../api/messages";
 
 export type WallMessage = {
   id: number;
@@ -8,9 +8,7 @@ export type WallMessage = {
   expiresAt: number;   // ms
 };
 
-
 export function WallPage() {
-
   async function onSubmit(e: Event) {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
@@ -20,12 +18,11 @@ export function WallPage() {
     if (!content.trim()) return;
 
     try {
-      const result = await insertMessage(author, content);
+      const result = await sendMessage(author, content);
       console.log(result);
     } catch (error) {
       console.log(error);
     }
-    
   }
 
   return h('section', {}, 
