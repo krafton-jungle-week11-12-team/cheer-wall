@@ -3,7 +3,7 @@ import { WallMessage } from './api/messages';
 import { useEffect, useState } from './lib/mini-react';
 import { MessagesPage, toMessages,type Tab } from './pages/MessagesPage';
 import { WallPage } from './pages/WallPage';
-import { fetchWall, likeMessage, fetchMyMessages, type MessageRow } from './api/messages';
+import { fetchWall, likeMessage, fetchMyMessages, fetchLikeCounts, type MessageRow } from './api/messages';
 
 export function App() {
   const [route, setRoute] = useState(location.hash);
@@ -18,6 +18,7 @@ export function App() {
 
   const [messages, setMessages] = useState<WallMessage[]>([]);
   const [allRows, setAllRows] = useState<MessageRow[]>([]);
+  const [likeCounts, setLikeCounts] = useState<Record<number, number>>({}); // DBMS likes 테이블에서 가져온 messageId별 좋아요 개수
   const [now, setNow] = useState(Date.now());
 
   const loadWall = () => fetchWall().then(setMessages).catch(console.error);
@@ -34,6 +35,7 @@ export function App() {
   useEffect(() => {
     if (route === '#donghwan') return; // 벽 화면일 때는 DBMS 메시지 목록 안 가져오기
     fetchMyMessages().then(setAllRows).catch(console.error);
+    fetchLikeCounts().then(setLikeCounts).catch(console.error);
     loadWall();
   }, [route]);
 
@@ -61,7 +63,7 @@ export function App() {
 
   const page = route === '#donghwan'
     ? h(WallPage, { messages, now, onSent: loadWall, onLike })
-    : h(MessagesPage, { messages: toMessages(allRows, messages), tab, onTabChange: setTab });// 전체 메시지 탭(전체/만료된 메시지)
+    : h(MessagesPage, { messages: toMessages(allRows, messages, likeCounts), tab, onTabChange: setTab });// 전체 메시지 탭(전체/만료된 메시지)
 
   return h('div', { class: 'container' },
   h('ul', {},
