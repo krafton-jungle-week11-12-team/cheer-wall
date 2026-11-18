@@ -38,7 +38,7 @@ export async function sendMessage(author: string, content: string) {
 
 export async function insertMessage(author: string, content: string, createdAt: number): Promise<InsertResult> {
   const esc = (s: string) => `'${s.replace(/'/g, "''")}'`;
-  const query = `INSERT INTO messages VALUES (${esc(author)}, ${esc(content)}, ${Date.now()})`;
+  const query = `INSERT INTO messages VALUES (${esc(author)}, ${esc(content)}, ${createdAt})`;
 
   const res = await fetch('/db/query', {
     method: 'POST',
@@ -58,15 +58,6 @@ export async function fetchMessages(): Promise<MessageRow[]> {
     body: JSON.stringify({ sql: 'SELECT * FROM messages' }),
   });
 
-  export async function fetchRemainingSeconds(): Promise<Record<number, number>> {
-    const items = await redis<{ key: string; value: string; ttl: number }[]>('SCANPREFIX', 'msg:');
-
-    const result: Record<number, number> = {};
-    for (const item of items) {
-      const id = Number(item.key.slice('msg:'.length)};
-      result[id] = item.ttl;
-    }
-    return result;
   const result = await res.json();
   if (!result.ok) throw new Error(result.error.message);
   return result.rows.map((row: [number, string, string, number]) => ({
@@ -77,3 +68,20 @@ export async function fetchMessages(): Promise<MessageRow[]> {
   }));
 }
 
+type ScanItem = { key: string; value: string; ttl: number };
+
+export async function fetchWall(): Promise<WallMessage[]> {
+  const items = await redis<ScanItem[]>('SCANPREFIX', 'msg:');
+  const now = Date.now();
+
+  const messages: WallMessage[] = [];
+  for (const item of items) {
+    try {
+      const { id, author, content } = JSON.parse(item.value);
+      messages.push({ id, author, content, expiresAt: now + item.ttl * 1000});
+    } catch (error) {
+      console.warn(`[fetchWall] JSON이 아닌 값이라 건너뜀: ${item.key}`, item.value);
+    }
+  }
+  return messages.sort((a, b) => b.expiresAt - a.expiresAt);
+}
