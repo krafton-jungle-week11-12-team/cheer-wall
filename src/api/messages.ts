@@ -15,6 +15,13 @@ export type InsertResult = {
   elapsed_ms: number;
 };
 
+export type MessageRow = {
+  id: number;
+  author: string;
+  content: string;
+  createdAt: number;
+}
+
 const TTL_SECONDS = '1800';
 
 export async function sendMessage(author: string, content: string) {
@@ -42,6 +49,24 @@ export async function insertMessage(author: string, content: string, createdAt: 
   const result = await res.json();
   if (!result.ok) throw new Error(result.error.message);
   return result;
+}
+
+// DBMS message 테이블 전부 읽어서 메시지 목록으로 돌려주는 함수
+export async function fetchMessages(): Promise<MessageRow[]> {
+  const res = await fetch('/db/query', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sql: 'SELECT * FROM messages' }),
+  });
+
+  const result = await res.json();
+  if (!result.ok) throw new Error(result.error.message);
+  return result.rows.map((row: [number, string, string, number]) => ({
+    id: row[0],
+    author: row[1],
+    content: row[2],
+    createdAt: row[3]
+  }));
 }
 
 type ScanItem = { key: string; value: string; ttl: number };

@@ -1,8 +1,11 @@
 import { h, type VNode } from '../lib/mini-react';
+import type { MessageRow, WallMessage } from '../api/messages';
+
+
 
 // 페이지 전체, 만료됨 탭 바꿔서 보여주기 탭 상태는 app에서 props로 받음
-export function MessagesPage({ tab, onTabChange }: { tab: Tab; onTabChange: (next: Tab) => void; }): VNode {
-  const sorted = [...SAMPLE].sort((a, b) => b.id - a.id); // id 내림차순 정렬
+export function MessagesPage({ messages, tab, onTabChange }: { messages: Message[];tab: Tab; onTabChange: (next: Tab) => void; }): VNode {
+  const sorted = [...messages].sort((a, b) => b.id - a.id); // id 내림차순 정렬
   const expiredCount = sorted.filter(isExpired).length;
   const visible = tab === 'expired' ? sorted.filter(isExpired) : sorted;
   return h('section', {},
@@ -27,6 +30,21 @@ const SAMPLE: Message[] = [
   { id: 4, author: '이현지A', content: '화이팅 하세요!!!^^ Are you redis~!!', expiresAt: Date.now() + 30 * 60 * 1000 },  // 30분 남음
 
 ];
+
+
+
+// DBMS와 Redis에서 가져온 메시지 데이터를 화면에 보여주기 위해 변환하는 함수
+export function toMessages(rows: MessageRow[], wall: WallMessage[]): Message[] {
+  return rows.map((row) => {
+    const alive = wall.find((w) => w.id === row.id);
+    return {
+      id: row.id,
+      author: row.author,
+      content: row.content,
+      expiresAt: alive ? alive.expiresAt : null,
+    };
+  });
+}
 
 function isExpired(message: Message): boolean {
   return message.expiresAt === null || message.expiresAt <= Date.now();
