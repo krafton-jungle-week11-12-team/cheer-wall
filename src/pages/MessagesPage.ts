@@ -27,7 +27,7 @@ function MessageItem({ message }: { message: Message; }): VNode {
   return h('li', null,
     `#${message.id} `,
     h('b', null, message.author),
-    ': ${message.content}',
+    `: ${message.content}`,
     isExpired(message) ? '[만료됨]' : `[${formatRemaining(message.expiresAt!)} 남음]`,
   );
 }
