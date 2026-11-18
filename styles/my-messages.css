@@ -1,0 +1,30 @@
+/* 내 메시지 화면: 작은 탭(전체 / 만료된 메시지) */
+
+.sub-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.sub-tab {
+  padding: 9px 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 지금 고른 탭은 버튼이 disabled라서, 그걸 "선택됨" 모양으로 씀 */
+.sub-tab:disabled {
+  border-color: var(--blue);
+  background: var(--blue-weak);
+  color: var(--blue);
+  cursor: default;
+  opacity: 1;
+}

@@ -10,10 +10,10 @@ export function MessagesPage({ messages, now, tab, onTabChange }: { messages: Me
   const sorted = [...messages].sort((a, b) => b.id - a.id); // id 내림차순 정렬
   const expired = sorted.filter((m) => isExpired(m.expiresAt, now));
   const visible = tab === 'expired' ? expired : sorted;
-  return h('section', {},
-    h('h2', {}, '동호 페이지'),
+  return h('section', { class: 'page messages-page' },
+    h('h2', { class: 'page-title' }, '동호 페이지'),
     h(TabButton, { tab, onChange: onTabChange, totalCount: sorted.length, expiredCount: expired.length }),
-    h('ul', {}, visible.map((m) => h(MessageCard, { key: m.id, message: m, now, showId: true }))),);
+    h('ul', { class: 'card-list' }, visible.map((m) => h(MessageCard, { key: m.id, message: m, now, showId: true }))),);
 }
 
 // DBMS와 Redis에서 가져온 메시지 데이터를 화면에 보여주기 위해 변환하는 함수
@@ -37,9 +37,9 @@ function TabButton({ tab, onChange, totalCount, expiredCount }:
     totalCount: number;
     expiredCount: number;
   }): VNode {
-  return h('div', null,
-    h('button', { type: 'button', disabled: tab === 'all', onClick: () => onChange('all') }, `전체 (${formatCount(totalCount)})`),
-    h('button', { type: 'button', disabled: tab === 'expired', onClick: () => onChange('expired') }, `만료된 메시지 (${formatCount(expiredCount)})`)
+  return h('div', { class: 'sub-tabs' },
+    h('button', { type: 'button', class: 'sub-tab', disabled: tab === 'all', onClick: () => onChange('all') }, `전체 (${formatCount(totalCount)})`),
+    h('button', { type: 'button', class: 'sub-tab', disabled: tab === 'expired', onClick: () => onChange('expired') }, `만료된 메시지 (${formatCount(expiredCount)})`)
   );
 }
 

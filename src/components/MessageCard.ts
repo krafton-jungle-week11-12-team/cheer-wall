@@ -13,16 +13,15 @@ type MessageCardProps = {
 
 // 벽 화면과 전체 메시지 화면이 같이 쓰는 메시지 카드: 작성자, 남은 시간(또는 만료됨), 내용, 좋아요
 export function MessageCard({ message, now, onLike, showId = false }: MessageCardProps): VNode {
-  const timer = message.expiresAt === null || isExpired(message.expiresAt, now)
-    ? '만료됨'
-    : formatRemaining(message.expiresAt - now);
+  const expired = message.expiresAt === null || isExpired(message.expiresAt, now);
+  const timer = expired ? '만료됨' : formatRemaining(message.expiresAt! - now);
   const likes = `❤ ${message.likes}`;
 
-  return h('li', { class: 'card' },
+  return h('li', { class: expired ? 'card expired' : 'card' },
     showId ? h('span', { class: 'id' }, `#${message.id}`) : null,
-    h('strong', {}, message.author),
-    h('span', { class: 'timer' }, timer),
-    h('p', {}, message.content),
+    h('strong', { class: 'author' }, message.author),
+    h('span', { class: expired ? 'timer expired' : 'timer' }, timer),
+    h('p', { class: 'content' }, message.content),
     onLike
       ? h('button', { type: 'button', class: 'like', onClick: () => onLike(message.id) }, likes)
       : h('span', { class: 'like' }, likes),
