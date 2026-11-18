@@ -1,9 +1,12 @@
 import { h, type VNode } from '../lib/mini-react';
 
-export function MessagesPage() {
+// 페이지 전체, 만료됨 탭 바꿔서 보여주기 탭 상태는 app에서 props로 받음
+export function MessagesPage({ tab, onTabChange }: { tab: Tab; onTabChange: (next: Tab) => void }) :VNode {
+  const visible = tab === 'expired' ? SAMPLE.filter(isExpired) : SAMPLE;
   return h('section', {},
     h('h2', {}, '동호 페이지'),
-    h('ul', {}, SAMPLE.map((m) => h(MessageItem, { key: m.id, message: m }))),);
+    h(TabButton, { tab, onChange: onTabChange }),
+    h('ul', {}, visible.map((m) => h(MessageItem, { key: m.id, message: m }))),);
 }
 
 type Message = {
@@ -12,6 +15,8 @@ type Message = {
   content: string;
   expiresAt: number | null;
 };
+export type Tab = 'all' | 'expired';
+
 // 샘플 메시지 데이터
 const SAMPLE: Message[] = [
   { id: 1, author: '동호', content: '정글 끝나는 날 언제임', expiresAt: Date.now() + 10 * 60 * 1000 }, // 10분 남음
@@ -29,6 +34,13 @@ function MessageItem({ message }: { message: Message; }): VNode {
     h('b', null, message.author),
     `: ${message.content}`,
     isExpired(message) ? '[만료됨]' : `[${formatRemaining(message.expiresAt!)} 남음]`,
+  );
+}
+
+function TabButton({ tab, onChange }: { tab: Tab; onChange: (next: Tab) => void; }): VNode {
+  return h('div', null,
+    h('button', { type: 'button', disabled: tab === 'all', onClick: () => onChange('all') }, '전체'),
+    h('button', { type: 'button', disabled: tab === 'expired', onClick: () => onChange('expired') }, '만료된 메시지')
   );
 }
 // 남은 시간을 "분:초"로 바꿈 (예: 1781초 → "29:41")
