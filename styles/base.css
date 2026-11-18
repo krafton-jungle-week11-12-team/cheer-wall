@@ -60,6 +60,13 @@ body {
   letter-spacing: -0.02em;
 }
 
+.app-qr {
+  display: block;
+  height: 44px;
+  width: auto;
+  margin-left: auto;
+}
+
 /* 큰 탭: 벽 / 내 메시지 */
 .main-tabs {
   list-style: none;
