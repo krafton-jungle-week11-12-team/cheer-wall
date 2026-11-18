@@ -51,6 +51,7 @@ export async function insertMessage(author: string, content: string, createdAt: 
   return result;
 }
 
+// DBMS message 테이블 전부 읽어서 메시지 목록으로 돌려주는 함수
 export async function fetchMessages(): Promise<MessageRow[]> {
   const res = await fetch('/db/query', {
     method: 'POST',
