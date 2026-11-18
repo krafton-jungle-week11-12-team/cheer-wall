@@ -112,7 +112,8 @@ body {
    마크업 순서(번호, 이름, 시간, 내용, 좋아요)는 그대로 두고 grid로 자리만 바꿈 */
 .card {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  /* 번호·이름 칸은 고정 폭: 이름 길이가 달라도 세로선이 같은 자리에 옴 */
+  grid-template-columns: auto 5.5em minmax(0, 1fr) auto auto;
   grid-template-areas: 'id author content timer like';
   align-items: center;
   min-height: 52px;
@@ -125,7 +126,8 @@ body {
 
 .card .id {
   grid-area: id;
-  margin-right: 6px;
+  min-width: 2.4em;   /* #5, #12처럼 자릿수가 달라도 같은 폭 */
+  margin-right: 4px;
   color: var(--sub);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
@@ -133,7 +135,7 @@ body {
 
 .card .author {
   grid-area: author;
-  max-width: 6.5em;
+  min-width: 0;       /* 칸보다 긴 이름은 ... 으로 줄임 */
   padding-right: 12px;
   border-right: 1px solid var(--line);
   font-size: 15px;
@@ -224,8 +226,11 @@ button.like:active {
     padding-left: 12px;
   }
 
+  .card {
+    grid-template-columns: auto 4.5em minmax(0, 1fr) auto auto;
+  }
+
   .card .author {
-    max-width: 5em;
     padding-right: 8px;
     font-size: 14px;
   }
