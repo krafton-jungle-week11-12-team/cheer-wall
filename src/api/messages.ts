@@ -62,15 +62,22 @@ export async function fetchMyMessages(): Promise<MessageRow[]> {
     createdAt: row[3]
   }));
 }
-// DBMS likes 테이블 전부 읽어서 messageId별 좋아요 개수로 돌려주는 함수
-export async function fetchLikeCounts():Promise<Record<number, number>> {
-  const result = await db<{ rows: [number][] }>(`SELECT message_id FROM likes`);
+// DBMS 워커(기본 4개)·큐(16)를 넘지 않도록 동시에 보낼 요청 수
+const LIKE_COUNT_CONCURRENCY = 4;
+
+// 내 메시지들의 좋아요 개수를 messageId별로 돌려주는 함수
+// WHERE message_id = ? 조건이라 DBMS가 likes.message_id 보조 인덱스(B+ 트리)로 그 메시지의 좋아요만 읽어요.
+export async function fetchLikeCounts(messageIds: number[]): Promise<Record<number, number>> {
   const counts: Record<number, number> = {};
-  //row 하나가 좋아요 하나를 의미하므로, messageId를 key로 해서 카운트 세기
-  for (const row of result.rows) {
-    const messageId = row[0]
-    counts[messageId] = (counts[messageId] ?? 0) + 1;
-  }
+  let next = 0;
+  const worker = async () => {
+    while (next < messageIds.length) {
+      const id = messageIds[next++];
+      const result = await db<{ rows: [number][] }>(`SELECT message_id FROM likes WHERE message_id = ${id}`);
+      counts[id] = result.rows.length; // row 하나가 좋아요 하나
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(LIKE_COUNT_CONCURRENCY, messageIds.length) }, worker));
   return counts;
 }
 

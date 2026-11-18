@@ -33,8 +33,14 @@ export function App() {
   // 전체 메시지화면을 열때 DB 전체 목록과 벽 목록 가져오기
   useEffect(() => {
     if (route === WALL_ROUTE) return; // 벽 화면일 때는 DBMS 메시지 목록 안 가져오기
-    fetchMyMessages().then(setAllRows).catch(console.error);
-    fetchLikeCounts().then(setLikeCounts).catch(console.error);
+    // 내 메시지를 먼저 받고, 그 id들로만 좋아요 개수를 조회 (보조 인덱스 사용)
+    fetchMyMessages()
+      .then((rows) => {
+        setAllRows(rows);
+        return fetchLikeCounts(rows.map((row) => row.id));
+      })
+      .then(setLikeCounts)
+      .catch(console.error);
     loadWall();
   }, [route]);
 
