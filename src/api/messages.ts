@@ -31,7 +31,7 @@ export async function sendMessage(author: string, content: string) {
 
 export async function insertMessage(author: string, content: string, createdAt: number): Promise<InsertResult> {
   const esc = (s: string) => `'${s.replace(/'/g, "''")}'`;
-  const query = `INSERT INTO messages VALUES (${esc(author)}, ${esc(content)}, ${Date.now()})`;
+  const query = `INSERT INTO messages VALUES (${esc(author)}, ${esc(content)}, ${createdAt})`;
 
   const res = await fetch('/db/query', {
     method: 'POST',
@@ -42,4 +42,22 @@ export async function insertMessage(author: string, content: string, createdAt: 
   const result = await res.json();
   if (!result.ok) throw new Error(result.error.message);
   return result;
+}
+
+type ScanItem = { key: string; value: string; ttl: number };
+
+export async function fetchWall(): Promise<WallMessage[]> {
+  const items = await redis<ScanItem[]>('SCANPREFIX', 'msg:');
+  const now = Date.now();
+
+  const messages: WallMessage[] = [];
+  for (const item of items) {
+    try {
+      const { id, author, content } = JSON.parse(item.value);
+      messages.push({ id, author, content, expiresAt: now + item.ttl * 1000});
+    } catch (error) {
+      console.warn(`[fetchWall] JSON이 아닌 값이라 건너뜀: ${item.key}`, item.value);
+    }
+  }
+  return messages.sort((a, b) => b.expiresAt - a.expiresAt);
 }
