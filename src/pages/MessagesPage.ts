@@ -19,22 +19,12 @@ type Message = {
   author: string;
   content: string;
   expiresAt: number | null;
+  likes: number;
 };
 export type Tab = 'all' | 'expired';
 
-// 샘플 메시지 데이터
-const SAMPLE: Message[] = [
-  { id: 1, author: '동호', content: '정글 끝나는 날 언제임', expiresAt: Date.now() + 10 * 60 * 1000 }, // 10분 남음
-  { id: 2, author: 'Bob', content: '모두 화이팅입니다', expiresAt: Date.now() + 25 * 60 * 1000 },     // 25분 남음
-  { id: 3, author: 'Charlie', content: 'React is great!', expiresAt: null },                          // 만료됨
-  { id: 4, author: '이현지A', content: '화이팅 하세요!!!^^ Are you redis~!!', expiresAt: Date.now() + 30 * 60 * 1000 },  // 30분 남음
-
-];
-
-
-
 // DBMS와 Redis에서 가져온 메시지 데이터를 화면에 보여주기 위해 변환하는 함수
-export function toMessages(rows: MessageRow[], wall: WallMessage[]): Message[] {
+export function toMessages(rows: MessageRow[], wall: WallMessage[], likeCounts: Record<number, number>): Message[] {
   return rows.map((row) => {
     const alive = wall.find((w) => w.id === row.id);
     return {
@@ -42,6 +32,7 @@ export function toMessages(rows: MessageRow[], wall: WallMessage[]): Message[] {
       author: row.author,
       content: row.content,
       expiresAt: alive ? alive.expiresAt : null,
+      likes: likeCounts[row.id] ?? 0
     };
   });
 }
@@ -56,6 +47,7 @@ function MessageItem({ message }: { message: Message; }): VNode {
     h('b', null, message.author),
     `: ${message.content}`,
     isExpired(message) ? '[만료됨]' : `[${formatRemaining(message.expiresAt!)} 남음]`,
+    `❤ ${message.likes}`,
   );
 }
 
