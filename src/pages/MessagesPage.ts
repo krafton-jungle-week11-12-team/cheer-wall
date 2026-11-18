@@ -1,5 +1,65 @@
-import { h } from "../lib/mini-react";
+import { h, type VNode } from '../lib/mini-react';
 
-export function MessagesPage() {
-  return h('section', {}, h('h2', {}, '동호 페이지'));
+// 페이지 전체, 만료됨 탭 바꿔서 보여주기 탭 상태는 app에서 props로 받음
+export function MessagesPage({ tab, onTabChange }: { tab: Tab; onTabChange: (next: Tab) => void; }): VNode {
+  const sorted = [...SAMPLE].sort((a, b) => b.id - a.id); // id 내림차순 정렬
+  const expiredCount = sorted.filter(isExpired).length;
+  const visible = tab === 'expired' ? sorted.filter(isExpired) : sorted;
+  return h('section', {},
+    h('h2', {}, '동호 페이지'),
+    h(TabButton, { tab, onChange: onTabChange, totalCount: sorted.length, expiredCount }),
+    h('ul', {}, visible.map((m) => h(MessageItem, { key: m.id, message: m }))),);
+}
+
+type Message = {
+  id: number;
+  author: string;
+  content: string;
+  expiresAt: number | null;
+};
+export type Tab = 'all' | 'expired';
+
+// 샘플 메시지 데이터
+const SAMPLE: Message[] = [
+  { id: 1, author: '동호', content: '정글 끝나는 날 언제임', expiresAt: Date.now() + 10 * 60 * 1000 }, // 10분 남음
+  { id: 2, author: 'Bob', content: '모두 화이팅입니다', expiresAt: Date.now() + 25 * 60 * 1000 },     // 25분 남음
+  { id: 3, author: 'Charlie', content: 'React is great!', expiresAt: null },                          // 만료됨
+  { id: 4, author: '이현지A', content: '화이팅 하세요!!!^^ Are you redis~!!', expiresAt: Date.now() + 30 * 60 * 1000 },  // 30분 남음
+
+];
+
+function isExpired(message: Message): boolean {
+  return message.expiresAt === null || message.expiresAt <= Date.now();
+}
+// 메시지 출력 컴포넌트 id, 이름, 내용, 남은 시간(만료됨 또는 분:초) 순 출력
+function MessageItem({ message }: { message: Message; }): VNode {
+  return h('li', null,
+    `#${message.id} `,
+    h('b', null, message.author),
+    `: ${message.content}`,
+    isExpired(message) ? '[만료됨]' : `[${formatRemaining(message.expiresAt!)} 남음]`,
+  );
+}
+
+function TabButton({ tab, onChange, totalCount, expiredCount }:
+  {
+    tab: Tab;
+    onChange: (next: Tab) => void;
+    totalCount: number;
+    expiredCount: number;
+  }): VNode {
+  return h('div', null,
+    h('button', { type: 'button', disabled: tab === 'all', onClick: () => onChange('all') }, `전체 (${formatCount(totalCount)})`),
+    h('button', { type: 'button', disabled: tab === 'expired', onClick: () => onChange('expired') }, `만료된 메시지 (${formatCount(expiredCount)})`)
+  );
+}
+// 남은 시간을 "분:초"로 바꿈 (예: 1781초 → "29:41")
+function formatRemaining(expiresAt: number): string {
+  const seconds = Math.ceil((expiresAt - Date.now()) / 1000);
+  const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
+  const ss = String(seconds % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
+}
+function formatCount(count: number): string {
+  return count > 999 ? '999+' : String(count);
 }
