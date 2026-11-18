@@ -69,7 +69,7 @@ export function App() {
   return h('div', { class: 'container' },
     h('header', { class: 'app-header' },
       h('img', { class: 'app-logo', src: 'dd-logo.png', alt: 'DD' }),
-      h('h1', { class: 'app-title' }, '지게 응원합니다'),
+      h('h1', { class: 'app-title' }, '동동이가 응원합니다'),
     ),
     h('ul', { class: 'main-tabs' },
       h('li', { class: route === WALL_ROUTE ? 'active' : '' }, h('a', { href: WALL_ROUTE }, '모든 응원')),
