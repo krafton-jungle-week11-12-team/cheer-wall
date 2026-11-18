@@ -5,6 +5,7 @@ export type WallMessage = {
   author: string;
   content: string;
   expiresAt: number;   // ms
+  likes: number;
 };
 
 export type InsertResult = {
@@ -47,17 +48,41 @@ export async function insertMessage(author: string, content: string, createdAt: 
 type ScanItem = { key: string; value: string; ttl: number };
 
 export async function fetchWall(): Promise<WallMessage[]> {
-  const items = await redis<ScanItem[]>('SCANPREFIX', 'msg:');
+  const [items, likeItems] = await Promise.all([
+    redis<ScanItem[]>('SCANPREFIX', 'msg:'),
+    redis<ScanItem[]>('SCANPREFIX', 'likes:')
+  ])
+
+  const likesById = new Map<number, number>();
+  for (const item of likeItems) {
+    likesById.set(Number(item.key.slice('likes:'.length)), Number(item.value));
+  }
+  
   const now = Date.now();
 
   const messages: WallMessage[] = [];
   for (const item of items) {
     try {
       const { id, author, content } = JSON.parse(item.value);
-      messages.push({ id, author, content, expiresAt: now + item.ttl * 1000});
+      messages.push({ id, author, content, expiresAt: now + item.ttl * 1000, likes: likesById.get(id) ?? 0});
     } catch (error) {
       console.warn(`[fetchWall] JSON이 아닌 값이라 건너뜀: ${item.key}`, item.value);
     }
   }
   return messages.sort((a, b) => b.expiresAt - a.expiresAt);
+}
+
+export async function likeMessage(id: number): Promise<number> {
+  // 1. 영구 기록 먼저 (메시지 저장과 같은 순서)
+  const res = await fetch('/db/query', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sql: `INSERT INTO likes VALUES (${id}, ${Date.now()})` }),
+  });
+
+  const result = await res.json();
+  if (!result.ok) throw new Error(result.error.message);
+
+  // 2. 실시간 카운터
+  return redis<number>('INCR', `likes:${id}`);
 }

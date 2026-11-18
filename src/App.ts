@@ -3,7 +3,7 @@ import { WallMessage } from './api/messages';
 import { useEffect, useState } from './lib/mini-react';
 import { MessagesPage, type Tab } from './pages/MessagesPage';
 import { WallPage } from './pages/WallPage';
-import { fetchWall } from './api/messages';
+import { fetchWall, likeMessage } from './api/messages';
 
 export function App() {
   const [route, setRoute] = useState(location.hash);
@@ -35,8 +35,24 @@ export function App() {
     return () => clearInterval(t);
   }, []);
 
+  const onLike = (id: number) => {
+    // 낙관적 업데이트
+    setMessages((prev) => prev.map((m) => (m.id === id ? {...m, likes: m.likes + 1} : m)));
+
+    likeMessage(id)
+    .then((count) =>
+      // 서버가 준 실제 값으로 맞춤 (다른 사람이 동시에 누른 것까지 반영)
+      setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, likes: count } : m))),
+    )
+    .catch((e) => {
+      console.error(e);
+      loadWall();   // 실패하면 서버 값으로 되돌림
+    });
+
+  }
+
   const page = route === '#donghwan'
-    ? h(WallPage, { messages, now, onSent: loadWall })
+    ? h(WallPage, { messages, now, onSent: loadWall, onLike })
     : h(MessagesPage, { tab, onTabChange: setTab });// 전체 메시지 탭(전체/만료된 메시지)
 
   return h('div', { class: 'container' },

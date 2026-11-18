@@ -5,6 +5,7 @@ type WallMessageProps = {
   messages: WallMessage[];
   now: number;
   onSent: () => void;
+  onLike: (id: number) => void;
 }
 
 function formatRemaining(ms: number) {
@@ -12,7 +13,7 @@ function formatRemaining(ms: number) {
   return `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
 }
 
-export function WallPage({ messages, now, onSent }: WallMessageProps) {
+export function WallPage({ messages, now, onSent, onLike }: WallMessageProps) {
   async function onSubmit(e: Event) {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
@@ -40,7 +41,8 @@ export function WallPage({ messages, now, onSent }: WallMessageProps) {
           h('strong', {}, m.author),
           h('span', { class: 'timer' }, formatRemaining(m.expiresAt - now)),
           h('p', {}, m.content),
-        ),
+          h('button', { type: 'button', class: 'like', onClick: () => onLike(m.id) }, `❤ ${m.likes}`),
+        )
       ),
     ),
     h('form', { onSubmit }, 
