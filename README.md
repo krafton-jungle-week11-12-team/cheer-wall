@@ -29,3 +29,7 @@
 
 ## 보조 인덱스
 <img width="720" alt="image" src="https://github.com/user-attachments/assets/6b427c8f-eb44-4f68-8708-84ae7d3d572d" />
+
+## 느낀점
+
+라이브러리를 직접 구현, 사용하며 내부 동작을 깊게 이해할 수 있는 시간이었습니다.
