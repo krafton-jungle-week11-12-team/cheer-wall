@@ -21,13 +21,11 @@
 ## 메시지 전송 흐름도
 <img width="720" alt="image" src="https://github.com/user-attachments/assets/1387c19f-6b50-4485-82a5-c1b23762cab2" />
 
-## DBMS의 장점
-<img width="720" alt="image" src="https://github.com/user-attachments/assets/df57421c-23d4-40af-ad63-210ee3cbfff7" />
-
-
-## Redis의 장점
+## 메시지 벽을 Redis에서 불러오는 이유
 <img width="720" alt="image" src="https://github.com/user-attachments/assets/b84fb736-fc3b-4ad6-9e0e-b78094b68ddf" />
 
+## 메시지를 DBMS에 저장하는 이유
+<img width="720" alt="image" src="https://github.com/user-attachments/assets/df57421c-23d4-40af-ad63-210ee3cbfff7" />
 
 ## 보조 인덱스
 <img width="720" alt="image" src="https://github.com/user-attachments/assets/6b427c8f-eb44-4f68-8708-84ae7d3d572d" />
