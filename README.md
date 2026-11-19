@@ -21,7 +21,7 @@
 ## 메시지 전송 흐름도
 <img width="720" alt="image" src="https://github.com/user-attachments/assets/1387c19f-6b50-4485-82a5-c1b23762cab2" />
 
-## RDBMS의 장점
+## DBMS의 장점
 <img width="720" alt="image" src="https://github.com/user-attachments/assets/df57421c-23d4-40af-ad63-210ee3cbfff7" />
 
 
